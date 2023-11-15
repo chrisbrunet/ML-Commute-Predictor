@@ -4,6 +4,7 @@ from bs4 import BeautifulSoup
 import requests
 import tkinter as tk
 
+# Global variables
 grid_depth = 0
 labels = ['Commute Direction',
         'Max Temp (°C)',
@@ -15,7 +16,6 @@ labels = ['Commute Direction',
         'Snow on Grnd (cm)',
         'Wind Direction',
         'Wind Speed (km/h)']
-root = tk.Tk()
 
 # Loading ColumnTransformer and ML Model
 model_filename = 'commute_estimator_model.pkl'
@@ -26,6 +26,7 @@ ct_filename = 'commute_estimator_ct.pkl'
 with open(ct_filename, 'rb') as file:
     ct = pickle.load(file)   
 
+# Funciton to run model and print result in GUI
 def run_model(inputs): 
     wind_dir_dict = {'N':0, 'NE': 4.5, 'E':9, 'SE':14.5, 'S':18, 'SW':22.5, 'W':27, 'NW':31.5} 
 
@@ -66,13 +67,18 @@ def run_model(inputs):
     grid_depth += 1
     output.grid(row=grid_depth, column=0, columnspan=3, pady=10)
 
+# Initializing window
+root = tk.Tk()
 root.title("Commute Predictor")
 
 entries = []
+
+# Initializing user input variables
 commute_direction_var = tk.IntVar()
 selected_wind_direction = tk.StringVar()
 input_vars = []
 
+# Setting up grid in GUI 
 for label_text in labels:
     label = tk.Label(root, text=label_text)
     label.grid(row=grid_depth, column=0, padx=5, pady=5)
@@ -108,9 +114,11 @@ for label_text in labels:
 
     grid_depth += 1
 
+# Button which calls run_model()
 calc_button = tk.Button(root, text="Calculate Commute", command=lambda: run_model(input_vars))
 calc_button.grid(row=grid_depth, column=0, columnspan=3, pady=10)
 
+# fit window to contents
 root.update_idletasks()
 
 root.mainloop()
