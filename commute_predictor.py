@@ -2,62 +2,91 @@ import pickle
 import pandas as pd
 from bs4 import BeautifulSoup
 import requests
+import html5lib
 import tkinter as tk
 
 # Global variables
 grid_depth = 0
-labels = ['Commute Direction',
-        'Max Temp (°C)',
-        'Min Temp (°C)',
-        'Mean Temp (°C)',
-        'Total Rain (mm)',
-        'Total Snow (cm)',
-        'Total Precip (mm)',
-        'Snow on Grnd (cm)',
-        'Wind Direction',
-        'Wind Speed (km/h)']
 
-# Loading ColumnTransformer and ML Model
-model_filename = 'commute_estimator_model.pkl'
-with open(model_filename, 'rb') as file:
-    model = pickle.load(file)
+# Functions
+def load_model():
+    model_filename = 'commute_estimator_model.pkl'
+    with open(model_filename, 'rb') as file:
+        model = pickle.load(file)
+    return model
 
-ct_filename = 'commute_estimator_ct.pkl'
-with open(ct_filename, 'rb') as file:
-    ct = pickle.load(file)   
+def load_ct():
+    ct_filename = 'commute_estimator_ct.pkl'
+    with open(ct_filename, 'rb') as file:
+        ct = pickle.load(file)
+    return ct
 
-# Funciton to run model and print result in GUI
-def run_model(inputs): 
+def get_current_weather():
+    URL = "https://www.timeanddate.com/weather/canada/calgary"
+    r = requests.get(URL) 
+
+    soup = BeautifulSoup(r.content, 'html5lib')
+    qlook = soup.find('div', attrs={'id': 'qlook'})
+    text = qlook.find_all('p')[1].text
+    weather = text.split()
+    hi = weather[4]
+    lo = weather[6]
+    mean = (int(hi) + int(lo)) / 2
+    wind_s = weather[8]
+
+    default_values = {
+        'Max Temp (°C)': hi,
+        'Min Temp (°C)': lo,
+        'Mean Temp (°C)': mean,
+        'Wind Speed (km/h)': wind_s,
+    }
+
+    return default_values
+
+def get_current_weather_and_set_defaults():
+    default_values = get_current_weather()
+    max_temp_entry.delete(0, tk.END) 
+    max_temp_entry.insert(0, default_values['Max Temp (°C)'])
+    min_temp_entry.delete(0, tk.END) 
+    min_temp_entry.insert(0, default_values['Min Temp (°C)'])
+    mean_temp_entry.delete(0, tk.END) 
+    mean_temp_entry.insert(0, default_values['Mean Temp (°C)'])
+    wind_spd_entry.delete(0, tk.END) 
+    wind_spd_entry.insert(0, default_values['Wind Speed (km/h)'])
+
+def run_model(): 
+    model = load_model()
+    ct = load_ct()
+
     wind_dir_dict = {'N':0, 'NE': 4.5, 'E':9, 'SE':14.5, 'S':18, 'SW':22.5, 'W':27, 'NW':31.5} 
-
-    direction = 'northbound' if inputs[0].get() else 'southbound'
-    max_temp = float(inputs[1].get())
-    min_temp = float(inputs[2].get())
-    mean_temp = float(inputs[3].get())
-    total_rain = float(inputs[4].get())
-    total_snow = float(inputs[5].get())
-    total_precip = float(inputs[6].get())
-    snow_on_grnd = float(inputs[7].get())
-    wind_dir = wind_dir_dict[inputs[8].get()]
-    wind_speed = float(inputs[16].get())
-
-    new_data = pd.DataFrame({
-        'direction': [direction],
-        'Max Temp (°C)': [max_temp],
-        'Min Temp (°C)': [min_temp],
-        'Mean Temp (°C)': [mean_temp],
-        'Total Rain (mm)': [total_rain],
-        'Total Snow (cm)': [total_snow],
-        'Total Precip (mm)': [total_precip],
-        'Snow on Grnd (cm)': [snow_on_grnd],
-        'Dir of Max Gust (10s deg)': [wind_dir],
-        'Spd of Max Gust (km/h)': [wind_speed]
-    })
+    commute_dir = 'northbound' if commute_dir_var.get() else 'southbound'
+    max_temp = max_temp_entry.get()
+    min_temp = min_temp_entry.get()
+    mean_temp = mean_temp_entry.get()
+    rain = rain_entry.get()
+    snow = snow_entry.get()
+    precip = precip_entry.get()
+    snowg = snow_on_gnd_entry.get()
+    wind_dir = selected_wind_direction.get()
+    wind_spd = wind_spd_entry.get()
     
+    new_data = pd.DataFrame({
+        'direction': [commute_dir],
+        'Max Temp (°C)': [float(max_temp)],
+        'Min Temp (°C)': [float(min_temp)],
+        'Mean Temp (°C)': [float(mean_temp)],
+        'Total Rain (mm)': [float(rain)],
+        'Total Snow (cm)': [float(snow)],
+        'Total Precip (mm)': [float(precip)],
+        'Snow on Grnd (cm)': [float(snowg)],
+        'Dir of Max Gust (10s deg)': [wind_dir_dict[wind_dir]],
+        'Spd of Max Gust (km/h)': [float(wind_spd)]
+    })
+
     transformed_new_data = ct.transform(new_data)
     prediction = model.predict(transformed_new_data)
 
-    if direction == 'northbound':
+    if new_data['direction'].equals('northbound'):
         text = f"It will take {int(prediction//60)}min, {int(prediction%60)}sec to get to school."
     else: 
         text = f"It will take {int(prediction//60)}min, {int(prediction%60)}sec to get home."
@@ -71,51 +100,79 @@ def run_model(inputs):
 root = tk.Tk()
 root.title("Commute Predictor")
 
-entries = []
-
-# Initializing user input variables
-commute_direction_var = tk.IntVar()
+# Checkbox variables
+commute_dir_var = tk.IntVar()
 selected_wind_direction = tk.StringVar()
-input_vars = []
 
 # Setting up grid in GUI 
-for label_text in labels:
-    label = tk.Label(root, text=label_text)
-    label.grid(row=grid_depth, column=0, padx=5, pady=5)
+commute_dir_label = tk.Label(root, text='Commute Direction').grid(row=grid_depth, column=0, padx=5, pady=5)
+northbound_checkbox = tk.Checkbutton(root, text='Northbound', variable=commute_dir_var, onvalue=1, offvalue=0)
+southbound_checkbox = tk.Checkbutton(root, text='Southbound', variable=commute_dir_var, onvalue=0, offvalue=1)
+northbound_checkbox.grid(row=grid_depth, column=1, padx=5, pady=5, sticky="w")
+grid_depth += 1
+southbound_checkbox.grid(row=grid_depth, column=1, padx=5, pady=5, sticky="w")
+grid_depth += 1
 
-    if label_text == 'Commute Direction':
-        northbound_checkbox = tk.Checkbutton(root, text='Northbound', variable=commute_direction_var, onvalue=1, offvalue=0)
-        southbound_checkbox = tk.Checkbutton(root, text='Southbound', variable=commute_direction_var, onvalue=0, offvalue=1)
+get_weather_button = tk.Button(root, text="Get Current Weather", command=get_current_weather_and_set_defaults)
+get_weather_button.grid(row=grid_depth, column=0, columnspan=3, pady=10)
+grid_depth += 1
 
-        northbound_checkbox.grid(row=grid_depth, column=1, padx=5, pady=5, sticky="w")
-        grid_depth += 1
-        southbound_checkbox.grid(row=grid_depth, column=1, padx=5, pady=5, sticky="w")
+max_temp_label = tk.Label(root, text='Max Temp (°C)').grid(row=grid_depth, column=0, padx=5, pady=5)
+max_temp_entry = tk.Entry(root)
+max_temp_entry.grid(row=grid_depth, column=1, columnspan=2, padx=5, pady=5, sticky="w")
+grid_depth += 1
 
-        input_vars.append(commute_direction_var)
+min_temp_label = tk.Label(root, text='Min Temp (°C)').grid(row=grid_depth, column=0, padx=5, pady=5)
+min_temp_entry = tk.Entry(root)
+min_temp_entry.grid(row=grid_depth, column=1, columnspan=2, padx=5, pady=5, sticky="w")
+grid_depth += 1
 
-    elif label_text == 'Wind Direction':
-        directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW']
-        checkboxes_per_row = 2
-        for j, direction in enumerate(directions):
-            radiobutton = tk.Radiobutton(root, text=direction, variable=selected_wind_direction, value=direction)
-            row_value = grid_depth + j // checkboxes_per_row
-            col_value = 1 + j % checkboxes_per_row
-            radiobutton.grid(row=row_value, column=col_value, padx=1, pady=5, sticky="w")
-            input_vars.append(selected_wind_direction)
+mean_temp_label = tk.Label(root, text='Mean Temp (°C)').grid(row=grid_depth, column=0, padx=5, pady=5)
+mean_temp_entry = tk.Entry(root)
+mean_temp_entry.grid(row=grid_depth, column=1, columnspan=2, padx=5, pady=5, sticky="w")
+grid_depth += 1
 
-        grid_depth += (len(directions) + checkboxes_per_row - 1) // checkboxes_per_row
+rain_label = tk.Label(root, text='Total Rain (mm)').grid(row=grid_depth, column=0, padx=5, pady=5)
+rain_entry = tk.Entry(root)
+rain_entry.grid(row=grid_depth, column=1, columnspan=2, padx=5, pady=5, sticky="w")
+grid_depth += 1
 
-    else:
-        entry = tk.Entry(root)
-        entry.grid(row=grid_depth, column=1, columnspan=2, padx=5, pady=5)
-        entries.append(entry)
+snow_label = tk.Label(root, text='Total Snow (cm)').grid(row=grid_depth, column=0, padx=5, pady=5)
+snow_entry = tk.Entry(root)
+snow_entry.grid(row=grid_depth, column=1, columnspan=2, padx=5, pady=5, sticky="w")
+grid_depth += 1
 
-        input_vars.append(entry)
+precip_label = tk.Label(root, text='Total Precip (mm)').grid(row=grid_depth, column=0, padx=5, pady=5)
+precip_entry = tk.Entry(root)
+precip_entry.grid(row=grid_depth, column=1, columnspan=2, padx=5, pady=5, sticky="w")
+grid_depth += 1
 
-    grid_depth += 1
+snow_on_gnd_label = tk.Label(root, text='Snow on Ground (cm)').grid(row=grid_depth, column=0, padx=5, pady=5)
+snow_on_gnd_entry = tk.Entry(root)
+snow_on_gnd_entry.grid(row=grid_depth, column=1, columnspan=2, padx=5, pady=5, sticky="w")
+grid_depth += 1
+
+wind_spd_label = tk.Label(root, text='Wind Speed (km/h)').grid(row=grid_depth, column=0, padx=5, pady=5)
+wind_spd_entry = tk.Entry(root)
+wind_spd_entry.grid(row=grid_depth, column=1, columnspan=2, padx=5, pady=5, sticky="w")
+grid_depth += 1
+
+wind_dir_label = tk.Label(root, text='Wind Direction').grid(row=grid_depth, column=0, padx=5, pady=5)
+N_button = tk.Radiobutton(root, text='N', variable=selected_wind_direction, value='N').grid(row=grid_depth, column=1, padx=1, pady=5, sticky="w")
+NE_button = tk.Radiobutton(root, text='NE', variable=selected_wind_direction, value='NE').grid(row=grid_depth, column=2, padx=1, pady=5, sticky="w")
+grid_depth += 1
+E_button = tk.Radiobutton(root, text='E', variable=selected_wind_direction, value='E').grid(row=grid_depth, column=1, padx=1, pady=5, sticky="w")
+SE_button = tk.Radiobutton(root, text='SE', variable=selected_wind_direction, value='SE').grid(row=grid_depth, column=2, padx=1, pady=5, sticky="w")
+grid_depth += 1
+S_button = tk.Radiobutton(root, text='S', variable=selected_wind_direction, value='S').grid(row=grid_depth, column=1, padx=1, pady=5, sticky="w")
+SW_button = tk.Radiobutton(root, text='SW', variable=selected_wind_direction, value='SW').grid(row=grid_depth, column=2, padx=1, pady=5, sticky="w")
+grid_depth += 1
+W_button = tk.Radiobutton(root, text='W', variable=selected_wind_direction, value='W').grid(row=grid_depth, column=1, padx=1, pady=5, sticky="w")
+NW_button = tk.Radiobutton(root, text='NW', variable=selected_wind_direction, value='NW').grid(row=grid_depth, column=2, padx=1, pady=5, sticky="w")
+grid_depth += 1
 
 # Button which calls run_model()
-calc_button = tk.Button(root, text="Calculate Commute", command=lambda: run_model(input_vars))
+calc_button = tk.Button(root, text="Calculate Commute", command=lambda: run_model())
 calc_button.grid(row=grid_depth, column=0, columnspan=3, pady=10)
 
 # fit window to contents
