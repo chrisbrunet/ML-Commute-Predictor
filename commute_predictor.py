@@ -5,9 +5,6 @@ import requests
 import html5lib
 import tkinter as tk
 
-# Global variables
-grid_depth = 0
-
 # Functions
 def load_model():
     model_filename = 'commute_estimator_model.pkl'
@@ -86,15 +83,14 @@ def run_model():
     transformed_new_data = ct.transform(new_data)
     prediction = model.predict(transformed_new_data)
 
-    if new_data['direction'].equals('northbound'):
+    if new_data['direction'].values[0] == 'northbound':
         text = f"It will take {int(prediction//60)}min, {int(prediction%60)}sec to get to school."
     else: 
         text = f"It will take {int(prediction//60)}min, {int(prediction%60)}sec to get home."
 
     output = tk.Label(root, text=text)
     global grid_depth
-    grid_depth += 1
-    output.grid(row=grid_depth, column=0, columnspan=3, pady=10)
+    output.grid(row=16, column=0, columnspan=3, pady=10)
 
 # Initializing window
 root = tk.Tk()
@@ -105,75 +101,72 @@ commute_dir_var = tk.IntVar()
 selected_wind_direction = tk.StringVar()
 
 # Setting up grid in GUI 
-commute_dir_label = tk.Label(root, text='Commute Direction').grid(row=grid_depth, column=0, padx=5, pady=5)
+commute_dir_label = tk.Label(root, text='Commute Direction').grid(row=0, column=0, padx=5, pady=5)
 northbound_checkbox = tk.Checkbutton(root, text='Northbound', variable=commute_dir_var, onvalue=1, offvalue=0)
 southbound_checkbox = tk.Checkbutton(root, text='Southbound', variable=commute_dir_var, onvalue=0, offvalue=1)
-northbound_checkbox.grid(row=grid_depth, column=1, padx=5, pady=5, sticky="w")
-grid_depth += 1
-southbound_checkbox.grid(row=grid_depth, column=1, padx=5, pady=5, sticky="w")
-grid_depth += 1
+northbound_checkbox.grid(row=0, column=1, padx=5, pady=5, sticky="w")
+southbound_checkbox.grid(row=1, column=1, padx=5, pady=5, sticky="w")
 
 get_weather_button = tk.Button(root, text="Get Current Weather", command=get_current_weather_and_set_defaults)
-get_weather_button.grid(row=grid_depth, column=0, columnspan=3, pady=10)
-grid_depth += 1
+get_weather_button.grid(row=2, column=0, columnspan=3, pady=10)
 
-max_temp_label = tk.Label(root, text='Max Temp (°C)').grid(row=grid_depth, column=0, padx=5, pady=5)
+max_temp_label = tk.Label(root, text='Max Temp (°C)').grid(row=3, column=0, padx=5, pady=5)
 max_temp_entry = tk.Entry(root)
-max_temp_entry.grid(row=grid_depth, column=1, columnspan=2, padx=5, pady=5, sticky="w")
-grid_depth += 1
+max_temp_entry.grid(row=3, column=1, columnspan=2, padx=5, pady=5, sticky="w")
 
-min_temp_label = tk.Label(root, text='Min Temp (°C)').grid(row=grid_depth, column=0, padx=5, pady=5)
+min_temp_label = tk.Label(root, text='Min Temp (°C)').grid(row=4, column=0, padx=5, pady=5)
 min_temp_entry = tk.Entry(root)
-min_temp_entry.grid(row=grid_depth, column=1, columnspan=2, padx=5, pady=5, sticky="w")
-grid_depth += 1
+min_temp_entry.grid(row=4, column=1, columnspan=2, padx=5, pady=5, sticky="w")
 
-mean_temp_label = tk.Label(root, text='Mean Temp (°C)').grid(row=grid_depth, column=0, padx=5, pady=5)
+mean_temp_label = tk.Label(root, text='Mean Temp (°C)').grid(row=5, column=0, padx=5, pady=5)
 mean_temp_entry = tk.Entry(root)
-mean_temp_entry.grid(row=grid_depth, column=1, columnspan=2, padx=5, pady=5, sticky="w")
-grid_depth += 1
+mean_temp_entry.grid(row=5, column=1, columnspan=2, padx=5, pady=5, sticky="w")
 
-rain_label = tk.Label(root, text='Total Rain (mm)').grid(row=grid_depth, column=0, padx=5, pady=5)
+rain_label = tk.Label(root, text='Total Rain (mm)').grid(row=6, column=0, padx=5, pady=5)
 rain_entry = tk.Entry(root)
-rain_entry.grid(row=grid_depth, column=1, columnspan=2, padx=5, pady=5, sticky="w")
-grid_depth += 1
+rain_entry.grid(row=6, column=1, columnspan=2, padx=5, pady=5, sticky="w")
 
-snow_label = tk.Label(root, text='Total Snow (cm)').grid(row=grid_depth, column=0, padx=5, pady=5)
+snow_label = tk.Label(root, text='Total Snow (cm)').grid(row=7, column=0, padx=5, pady=5)
 snow_entry = tk.Entry(root)
-snow_entry.grid(row=grid_depth, column=1, columnspan=2, padx=5, pady=5, sticky="w")
-grid_depth += 1
+snow_entry.grid(row=7, column=1, columnspan=2, padx=5, pady=5, sticky="w")
 
-precip_label = tk.Label(root, text='Total Precip (mm)').grid(row=grid_depth, column=0, padx=5, pady=5)
+precip_label = tk.Label(root, text='Total Precip (mm)').grid(row=8, column=0, padx=5, pady=5)
 precip_entry = tk.Entry(root)
-precip_entry.grid(row=grid_depth, column=1, columnspan=2, padx=5, pady=5, sticky="w")
-grid_depth += 1
+precip_entry.grid(row=8, column=1, columnspan=2, padx=5, pady=5, sticky="w")
 
-snow_on_gnd_label = tk.Label(root, text='Snow on Ground (cm)').grid(row=grid_depth, column=0, padx=5, pady=5)
+snow_on_gnd_label = tk.Label(root, text='Snow on Ground (cm)').grid(row=9, column=0, padx=5, pady=5)
 snow_on_gnd_entry = tk.Entry(root)
-snow_on_gnd_entry.grid(row=grid_depth, column=1, columnspan=2, padx=5, pady=5, sticky="w")
-grid_depth += 1
+snow_on_gnd_entry.grid(row=9, column=1, columnspan=2, padx=5, pady=5, sticky="w")
 
-wind_spd_label = tk.Label(root, text='Wind Speed (km/h)').grid(row=grid_depth, column=0, padx=5, pady=5)
+wind_spd_label = tk.Label(root, text='Wind Speed (km/h)').grid(row=10, column=0, padx=5, pady=5)
 wind_spd_entry = tk.Entry(root)
-wind_spd_entry.grid(row=grid_depth, column=1, columnspan=2, padx=5, pady=5, sticky="w")
-grid_depth += 1
+wind_spd_entry.grid(row=10, column=1, columnspan=2, padx=5, pady=5, sticky="w")
 
-wind_dir_label = tk.Label(root, text='Wind Direction').grid(row=grid_depth, column=0, padx=5, pady=5)
-N_button = tk.Radiobutton(root, text='N', variable=selected_wind_direction, value='N').grid(row=grid_depth, column=1, padx=1, pady=5, sticky="w")
-NE_button = tk.Radiobutton(root, text='NE', variable=selected_wind_direction, value='NE').grid(row=grid_depth, column=2, padx=1, pady=5, sticky="w")
-grid_depth += 1
-E_button = tk.Radiobutton(root, text='E', variable=selected_wind_direction, value='E').grid(row=grid_depth, column=1, padx=1, pady=5, sticky="w")
-SE_button = tk.Radiobutton(root, text='SE', variable=selected_wind_direction, value='SE').grid(row=grid_depth, column=2, padx=1, pady=5, sticky="w")
-grid_depth += 1
-S_button = tk.Radiobutton(root, text='S', variable=selected_wind_direction, value='S').grid(row=grid_depth, column=1, padx=1, pady=5, sticky="w")
-SW_button = tk.Radiobutton(root, text='SW', variable=selected_wind_direction, value='SW').grid(row=grid_depth, column=2, padx=1, pady=5, sticky="w")
-grid_depth += 1
-W_button = tk.Radiobutton(root, text='W', variable=selected_wind_direction, value='W').grid(row=grid_depth, column=1, padx=1, pady=5, sticky="w")
-NW_button = tk.Radiobutton(root, text='NW', variable=selected_wind_direction, value='NW').grid(row=grid_depth, column=2, padx=1, pady=5, sticky="w")
-grid_depth += 1
+wind_dir_label = tk.Label(root, text='Wind Direction').grid(row=11, column=0, padx=5, pady=5)
+
+N_button = tk.Radiobutton(root, text='N', variable=selected_wind_direction, value='N')
+N_button.grid(row=11, column=1, padx=1, pady=5, sticky="w")
+NE_button = tk.Radiobutton(root, text='NE', variable=selected_wind_direction, value='NE')
+NE_button.grid(row=11, column=2, padx=1, pady=5, sticky="w")
+
+E_button = tk.Radiobutton(root, text='E', variable=selected_wind_direction, value='E')
+E_button.grid(row=12, column=1, padx=1, pady=5, sticky="w")
+SE_button = tk.Radiobutton(root, text='SE', variable=selected_wind_direction, value='SE')
+SE_button.grid(row=12, column=2, padx=1, pady=5, sticky="w")
+
+S_button = tk.Radiobutton(root, text='S', variable=selected_wind_direction, value='S')
+S_button.grid(row=13, column=1, padx=1, pady=5, sticky="w")
+SW_button = tk.Radiobutton(root, text='SW', variable=selected_wind_direction, value='SW')
+SW_button.grid(row=13, column=2, padx=1, pady=5, sticky="w")
+
+W_button = tk.Radiobutton(root, text='W', variable=selected_wind_direction, value='W')
+W_button.grid(row=14, column=1, padx=1, pady=5, sticky="w")
+NW_button = tk.Radiobutton(root, text='NW', variable=selected_wind_direction, value='NW')
+NW_button.grid(row=14, column=2, padx=1, pady=5, sticky="w")
 
 # Button which calls run_model()
 calc_button = tk.Button(root, text="Calculate Commute", command=lambda: run_model())
-calc_button.grid(row=grid_depth, column=0, columnspan=3, pady=10)
+calc_button.grid(row=15, column=0, columnspan=3, pady=10)
 
 # fit window to contents
 root.update_idletasks()
